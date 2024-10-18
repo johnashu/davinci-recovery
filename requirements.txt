@@ -1,0 +1,6 @@
+BeautifulSoup4
+requests
+eth_utils
+aiohttp
+asyncio
+web3
