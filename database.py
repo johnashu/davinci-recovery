@@ -10,6 +10,7 @@ contract_address = "0x1548c6227CBD78E51eB0A679c1f329B9a5a99BEb"
 # DB file location
 davinci_db = "db/davinci.sqlite"
 
+
 def int_to_hex(int_str):
     return "0x" + hex(int(int_str))[2:].zfill(40)
 
@@ -58,17 +59,21 @@ def create_database(input_file, db_file):
 
     print(f"Processed {len(token_ids)} tokens and saved to {db_file}")
 
+
 def create_processed_urls_table(db_name: str = davinci_db) -> None:
     conn: sqlite3.Connection = sqlite3.connect(database=db_name)
     c: sqlite3.Cursor = conn.cursor()
 
-    c.execute('''
+    c.execute(
+        """
     CREATE TABLE IF NOT EXISTS processed_urls
     (url TEXT PRIMARY KEY)
-    ''')
+    """
+    )
 
     conn.commit()
     conn.close()
+
 
 def url_exists(url: str, db_name: str = davinci_db) -> bool:
     conn: sqlite3.Connection = sqlite3.connect(database=db_name)
@@ -80,6 +85,7 @@ def url_exists(url: str, db_name: str = davinci_db) -> bool:
     conn.close()
     return result is not None
 
+
 def add_processed_url(url: str, db_name: str = davinci_db):
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
@@ -89,9 +95,8 @@ def add_processed_url(url: str, db_name: str = davinci_db):
     conn.commit()
     conn.close()
 
-def insert_or_update_nft(
-    nft_data: Dict[str, Any], db_name: str = davinci_db
-):
+
+def insert_or_update_nft(nft_data: Dict[str, Any], db_name: str = davinci_db):
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
 
@@ -117,32 +122,40 @@ def insert_or_update_nft(
     conn.commit()
     conn.close()
 
-def bulk_insert_or_update_nfts(nft_data_list: List[Dict[str, Any]], db_name: str = davinci_db):
+
+def bulk_insert_or_update_nfts(
+    nft_data_list: List[Dict[str, Any]], db_name: str = davinci_db
+):
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
 
-    c.executemany("""
+    c.executemany(
+        """
     INSERT OR REPLACE INTO nfts 
     (id, hex_id, name, description, creator, verified, image, collection, rarity)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, [(
-        str(nft.get("id")),
-        nft.get("hex_id"),
-        nft.get("name"),
-        nft.get("description"),
-        nft.get("creator"),
-        nft.get("verified") == "Yes",
-        nft.get("image"),
-        nft.get("collection"),
-        nft.get("rarity")
-    ) for nft in nft_data_list])
+    """,
+        [
+            (
+                str(nft.get("id")),
+                nft.get("hex_id"),
+                nft.get("name"),
+                nft.get("description"),
+                nft.get("creator"),
+                nft.get("verified") == "Yes",
+                nft.get("image"),
+                nft.get("collection"),
+                nft.get("rarity"),
+            )
+            for nft in nft_data_list
+        ],
+    )
 
     conn.commit()
     conn.close()
-    
-def get_nft_by_id(
-    nft_id: str, db_name: str = davinci_db
-) -> Dict[str, Any]:
+
+
+def get_nft_by_id(nft_id: str, db_name: str = davinci_db) -> Dict[str, Any]:
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
 
@@ -204,9 +217,11 @@ def update_collection_for_tokens(
     for i in range(0, len(token_ids), batch_size):
         batch = token_ids[i : i + batch_size]
         placeholders = ",".join(["?"] * len(batch))
-        print(f"Updating {len(batch)} tokens with collection address: {collection_address}")
+        print(
+            f"Updating {len(batch)} tokens with collection address: {collection_address}"
+        )
         print(batch[1:10])
-        
+
         cursor.execute(
             f"""
         UPDATE nfts
@@ -273,17 +288,13 @@ def check_for_duplicates(
 
 if __name__ == "__main__":
     input_file = "data/token_ids.json"
-    db_file = davinci_db
-    create_database(input_file=input_file, db_file=db_file)
-    create_processed_urls_table(db_name=db_file)
+    db_file = "db/davinci.sqlite"
+    # create_database(input_file=input_file, db_file=db_file)
+    # create_processed_urls_table(db_name=db_file)
 
     # Check for duplicates after creating the database
-    columns_to_check = [
-        "id", 
-        "hex_id", 
-        "image", 
-        "name", 
-        "collection"
-        ]
+    columns_to_check = ["id", "hex_id", "image", "name", "collection"]
 
-    duplicates = check_for_duplicates(db_name=db_file, columns_to_check=columns_to_check, print_to_console=False)
+    duplicates = check_for_duplicates(
+        db_name=db_file, columns_to_check=columns_to_check, print_to_console=False
+    )

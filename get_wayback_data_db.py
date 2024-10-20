@@ -6,15 +6,27 @@ from wayback import WaybackClient
 from bs4 import BeautifulSoup
 from eth_utils.hexadecimal import remove_0x_prefix
 from eth_utils.address import to_normalized_address
-from database import create_database, insert_or_update_nft, get_nft_by_id, get_all_nfts, add_processed_url, url_exists, create_processed_urls_table, bulk_insert_or_update_nfts
+from database import (
+    create_database,
+    insert_or_update_nft,
+    get_nft_by_id,
+    get_all_nfts,
+    add_processed_url,
+    url_exists,
+    create_processed_urls_table,
+    bulk_insert_or_update_nfts,
+)
 
 errors = []
+
 
 def extract_view_info(html_content):
     soup = BeautifulSoup(html_content, "html.parser")
     info = {}
     #  Find the script tag containing the session.item data
-    script_tag = soup.find(name="script", string=lambda t: t and "session.item" in str(t))
+    script_tag = soup.find(
+        name="script", string=lambda t: t and "session.item" in str(t)
+    )
 
     # print(script_tag)
     if script_tag:
@@ -169,6 +181,7 @@ def process_url(client, url):
     # print(f"Results: {results}")
     return results
 
+
 def manually_scrape_url(url):
     response = requests.get(url)
     content = response.content.decode()
@@ -185,29 +198,36 @@ def manually_scrape_url(url):
 def process_urls(urls: list[str], client: WaybackClient) -> None:
     global errors
     manual_count = 0
+    is_manual = False
     for url in urls:
         try:
             if url_exists(url):
                 print(f"Skipping already processed URL: {url}")
                 continue
-            
+
             results = []
             # This is a Wayback Machine web URL, use manual scraping
             if url.startswith("https://web.archive.org/web/"):
-                # this is manual processing, the front end is restrictive with requests so be patient and run multiple times with sleeps to process them all.. 
-                # logic below has some sleep but it is not perfect due to retries.. just run again if any errors after a minute.. 
-                print(f"{manual_count}: Processing Manual URL: {url}...")
+                is_manual = True
                 manual_count += 1
+                # this is manual processing, the front end is restrictive with requests so be patient and run multiple times with sleeps to process them all..
+                # logic below has some sleep but it is not perfect due to retries.. just run again if any errors after a minute..
+                print(f"{manual_count}: Processing Manual URL: {url}...")
+
                 if manual_count % 20 == 0:
                     print(f"Sleeping for 60 seconds...")
                     time.sleep(60)
-                
+
                 results = manually_scrape_url(url=url)
                 time.sleep(3)
             else:
+                is_manual = False
                 print(f"Processing {url}...")
                 if url.startswith(
-                    ("https://www.davinci.gallery/view/", "https://davinci.gallery/view/")
+                    (
+                        "https://www.davinci.gallery/view/",
+                        "https://davinci.gallery/view/",
+                    )
                 ):
                     token_id = int(
                         url.split("/")[-1].split("%")[0].split("#")[0].split("?")[0], 16
@@ -215,7 +235,9 @@ def process_urls(urls: list[str], client: WaybackClient) -> None:
                     existing_nft = get_nft_by_id(nft_id=str(token_id))
                     # print(f"Existing NFT: {existing_nft}")
                     if existing_nft and existing_nft.get("image"):
-                        print(f"Skipping {existing_nft.get('name')} because it already exists with an image in the database")
+                        print(
+                            f"Skipping {existing_nft.get('name')} because it already exists with an image in the database"
+                        )
                         add_processed_url(url=url)
                         continue
                 results = process_url(client=client, url=url)
@@ -230,6 +252,9 @@ def process_urls(urls: list[str], client: WaybackClient) -> None:
 
         except Exception as e:
             print(f"Error processing {url}: {str(e)}")
+            if is_manual:
+                print(f"Sleeping for 60 seconds...")
+                time.sleep(60)
 
     print("All URLs processed and data saved.")
 
@@ -255,8 +280,8 @@ def main():
     create_processed_urls_table(db_name=db_file)
 
     print(f"Processing {len(cards_urls)} URLs...")
-    process_urls(urls=cards_urls, client=client)
-    process_urls(urls=view_urls, client=client)
+    # process_urls(urls=cards_urls, client=client)
+    # process_urls(urls=view_urls, client=client)
     process_urls(urls=extracted_urls, client=client)
 
 
@@ -287,7 +312,7 @@ if __name__ == "__main__":
     view_urls += explore_urls
 
     # Cleaned error urls, direct web scrape
-    with open('data/extracted_urls.txt', 'r') as f:
+    with open("data/extracted_urls.txt", "r") as f:
         extracted_urls = [line.strip() for line in f]
 
     main()

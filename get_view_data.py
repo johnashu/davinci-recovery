@@ -38,4 +38,3 @@ if __name__ == "__main__":
     print(
         f"Saved {len(unique_view_urls)} unique URLs to davinci_gallery_{path}_urls.json"
     )
-

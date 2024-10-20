@@ -2,8 +2,10 @@ import json
 
 # Create a json data structure for the tokens
 
+
 def int_to_hex(int_str):
     return hex(int(int_str))
+
 
 def process_token_ids(input_file, output_file):
     # Read the input JSON file
@@ -27,10 +29,11 @@ def process_token_ids(input_file, output_file):
         processed_tokens.append(token_dict)
 
     # Write the processed tokens to the output JSON file
-    with open(output_file, 'w') as f:
+    with open(output_file, "w") as f:
         json.dump(processed_tokens, f, indent=2)
 
     print(f"Processed {len(processed_tokens)} tokens and saved to {output_file}")
+
 
 # Usage
 input_file = "data/token_ids.json"

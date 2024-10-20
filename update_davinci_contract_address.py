@@ -14,7 +14,9 @@ def process_token_ids(input_file, db_file):
     with open(input_file, "r") as f:
         token_ids = json.load(f)
 
-    total_updated = update_collection_for_tokens(token_ids, contract_address, db_name=db_file)
+    total_updated = update_collection_for_tokens(
+        token_ids, contract_address, db_name=db_file
+    )
 
     print(f"Processed {total_updated} tokens")
 
